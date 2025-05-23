@@ -220,11 +220,11 @@ string? GetSummary(string? summary, bool linkFromGroupedType)
         summary = summary.Replace("\n", config.ForcedNewline);
 
     summary = HtmlEscape(summary);
-    
+
     if (config.UnescapeCodeBlocks)
         summary = markdownCodeBlockRegex.Replace(summary!,
             match => $"```{match.Groups[1].Value.Trim()}\n{WebUtility.HtmlDecode(match.Groups[2].Value.Trim())}\n```");
-    
+
     return summary;
 }
 
@@ -355,7 +355,7 @@ await Parallel.ForEachAsync(items, async (item, _) =>
                     if (string.IsNullOrWhiteSpace(method.Syntax.Return?.Description))
                         str.AppendLine();
                     else
-                        str.Append(": " + GetSummary(method.Syntax.Return.Description, isGroupedType));
+                        str.AppendLine(": " + GetSummary(method.Syntax.Return.Description, isGroupedType));
                 }
 
                 if (method.Syntax.Parameters is { Length: > 0 })
