@@ -168,14 +168,15 @@ string Link(string uid, bool linkFromGroupedType, bool nameOnly = false, bool li
         // todo: try to resolve to msdn links if System namespace maybe
         return $"`{uid.Replace('{', '<').Replace('}', '>')}`";
     var name = nameOnly ? reference.Name : reference.FullName;
+    var filename = config.UseUidFilename ? reference.Uid : reference.Name;
     var dots = linkFromIndex ? "./" : linkFromGroupedType ? "../../" : "../";
     var extension = linkFromIndex ? ".md" : "";
     if (reference.Type is "Class" or "Interface" or "Enum" or "Struct" or "Delegate")
     {
         if (NamespaceHasTypeGrouping(reference.Namespace))
             return
-                $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Namespace}/{GetTypePathPart(reference.Type)}/{reference.Name}{extension}")})";
-        return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Namespace}/{reference.Name}{extension}")})";
+                $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Namespace}/{GetTypePathPart(reference.Type)}/{filename}{extension}")})";
+        return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Namespace}/{filename}{extension}")})";
     }
     else if (reference.Type is "Namespace")
     {
@@ -183,14 +184,14 @@ string Link(string uid, bool linkFromGroupedType, bool nameOnly = false, bool li
         {
             if (linkFromIndex)
             {
-                return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Name}/{reference.Name}{extension}")})";
+                return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{filename}/{filename}{extension}")})";
             }
             else
             {
-                return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Name}")})";
+                return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{filename}")})";
             }
         }
-        return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Name}/{reference.Name}{extension}")})";
+        return $"[{HtmlEscape(name)}]({FileEscape($"{dots}{filename}/{filename}{extension}")})";
     }
     else
     {
@@ -198,7 +199,7 @@ string Link(string uid, bool linkFromGroupedType, bool nameOnly = false, bool li
         if (parent == null)
             return $"`{uid.Replace('{', '<').Replace('}', '>')}`";
         return
-            $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Namespace}{(NamespaceHasTypeGrouping(parent.Namespace) ? $"/{GetTypePathPart(parent.Type)}" : "")}/{parent.Name}{extension}")}#{reference.Name.ToLower().Replace("(", "").Replace(")", "").Replace("?", "").Replace("*", "")})";
+            $"[{HtmlEscape(name)}]({FileEscape($"{dots}{reference.Namespace}{(NamespaceHasTypeGrouping(parent.Namespace) ? $"/{GetTypePathPart(parent.Type)}" : "")}/{parent.Name}{extension}")}#{filename.ToLower().Replace("(", "").Replace(")", "").Replace("?", "").Replace("*", "")})";
     }
 }
 
@@ -468,10 +469,11 @@ await Parallel.ForEachAsync(items, async (item, _) =>
             }
         }
 
+        var itemFilename = config.UseUidFilename ? item.Uid : item.Name.Replace('<', '`').Replace('>', '`');
         var path = !isGroupedType
-            ? Path.Join(config.OutputPath, item.Namespace, item.Name.Replace('<', '`').Replace('>', '`')) + ".md"
+            ? Path.Join(config.OutputPath, item.Namespace, itemFilename + ".md")
             : Path.Join(config.OutputPath, item.Namespace, GetTypePathPart(item.Type),
-                item.Name.Replace('<', '`').Replace('>', '`')) + ".md";
+                itemFilename + ".md");
 
         // create directory if it doesn't exist
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -635,6 +637,7 @@ class Config
     public string ForcedNewline { get; set; } = "  \n";
     public bool RewriteInterlinks { get; set; } = false;
     public bool UnescapeCodeBlocks { get; set; } = false;
+    public bool UseUidFilename { get; set; } = false;
 }
 
 public class ConfigTypesGrouping
